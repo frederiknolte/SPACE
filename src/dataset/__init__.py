@@ -1,9 +1,11 @@
 from .atari import Atari
 from .obj3d import Obj3D
+from .safetygym import SafetyGymDataset
 from torch.utils.data import DataLoader
 
 
 __all__ = ['get_dataset', 'get_dataloader']
+
 
 def get_dataset(cfg, mode):
     assert mode in ['train', 'val', 'test']
@@ -14,6 +16,9 @@ def get_dataset(cfg, mode):
         return Obj3D(cfg.dataset_roots.OBJ3D_SMALL, mode)
     elif cfg.dataset == 'OBJ3D_LARGE':
         return Obj3D(cfg.dataset_roots.OBJ3D_LARGE, mode)
+    elif cfg.dataset == 'safety_gym':
+        return SafetyGymDataset(cfg.dataset_roots.safety_gym, mode)
+
 
 def get_dataloader(cfg, mode):
     assert mode in ['train', 'val', 'test']
