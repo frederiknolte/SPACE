@@ -28,7 +28,9 @@ class SpaceBg(nn.Module):
         # Encode mask and image into component latents
         self.comp_encoder = CompEncoder()
         # Component decoder
-        if arch.K > 1:
+        if arch.use_weak_bg_decoder:
+            self.comp_decoder = CompDecoderWeak()
+        elif arch.K > 1:
             self.comp_decoder = CompDecoder()
         else:
             self.comp_decoder = CompDecoderStrong()
@@ -123,7 +125,7 @@ class SpaceBg(nn.Module):
         
         # Decode into component images, (B*K, 3, H, W)
         comps = self.comp_decoder(z_comp)
-        
+
         # Reshape (B*K, ...) -> (B, K, 3, H, W)
         comps = comps.view(B, K, 3, H, W)
         masks = masks.view(B, K, 1, H, W)
@@ -417,6 +419,40 @@ class SpatialBroadcast(nn.Module):
         x = torch.cat((x, coords), dim=1)
         
         return x
+
+
+class CompDecoderWeak(nn.Module):
+    """
+    Decoder z_comp into component image
+    """
+
+    def __init__(self):
+        nn.Module.__init__(self)
+        self.spatial_broadcast = SpatialBroadcast()
+        # Input will be (B, L+2, H, W)
+        self.decoder = nn.Sequential(
+            nn.Conv2d(arch.z_comp_dim + 2, 32, 3, 1),
+            nn.BatchNorm2d(32),
+            nn.ELU(),
+            nn.Conv2d(32, 32, 3, 1),
+            nn.BatchNorm2d(32),
+            nn.ELU(),
+            # 16x downsampled: (32, 4, 4)
+            nn.Conv2d(32, 3, 1, 1),
+        )
+
+    def forward(self, z_comp):
+        """
+        :param z_comp: (B, L)
+        :return: component image (B, 3, H, W)
+        """
+        h, w = arch.img_shape
+        # (B, L) -> (B, L+2, H, W)
+        z_comp = self.spatial_broadcast(z_comp, h + 4, w + 4)
+        # -> (B, 3, H, W)
+        comp = self.decoder(z_comp)
+        comp = torch.sigmoid(comp)
+        return comp
 
 
 class CompDecoder(nn.Module):

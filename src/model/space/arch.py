@@ -58,6 +58,8 @@ arch = CfgNode({
     # ==== START ====
     # Number of background components. If you set this to one, you should use a strong decoder instead.
     'K': 5,
+    # Flag for using a weak background decoder. If False, the default decoder will be used for K>1 and a strong decoder for K==1.
+    'use_weak_bg_decoder': False,
     # Background likelihood sigma
     'bg_sigma': 0.15,
     # Image encoding dimension
