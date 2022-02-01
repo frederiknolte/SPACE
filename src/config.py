@@ -6,7 +6,7 @@ cfg = CfgNode({
     'seed': 8848,
     'exp_name': '',
     'model': 'SPACE',
-    
+
     # Resume training or not
     'resume': True,
     # If resume is true, then we load this checkpoint. If '', we load the last checkpoint
