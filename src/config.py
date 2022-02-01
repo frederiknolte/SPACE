@@ -16,10 +16,15 @@ cfg = CfgNode({
     # Device ids to use
     'device_ids': [0, 1],
     'device': 'cuda:0',
-    'logdir': '../output/logs/',
     'checkpointdir': '../output/checkpoints/',
     'evaldir': '../output/eval/',
     'demodir': '../output/demo/',
+
+    'wandb': {
+      'logging': True,
+      'entity': 'object-centric-rl',
+      'project': 'SPACE'
+    },
     
     # Dataset to use
     'dataset': 'OBJ3D_LARGE',

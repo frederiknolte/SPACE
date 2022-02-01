@@ -6,14 +6,17 @@ from utils import Checkpointer, MetricLogger
 import os
 import os.path as osp
 from torch import nn
-from torch.utils.tensorboard import SummaryWriter
 from vis import get_vislogger
 import time
 from torch.nn.utils import clip_grad_norm_
+import wandb
 
 
 
 def train(cfg):
+    
+    wandb.init(config=cfg, project=cfg.wandb.project, entity=cfg.wandb.entity,
+               mode='online' if cfg.wandb.logging else 'disabled')
     
     print('Experiment name:', cfg.exp_name)
     print('Dataset:', cfg.dataset)
@@ -52,7 +55,6 @@ def train(cfg):
     if cfg.parallel:
         model = nn.DataParallel(model, device_ids=cfg.device_ids)
     
-    writer = SummaryWriter(log_dir=os.path.join(cfg.logdir, cfg.exp_name), flush_secs=30, purge_step=global_step)
     vis_logger = get_vislogger(cfg)
     metric_logger =  MetricLogger()
 
@@ -98,7 +100,7 @@ def train(cfg):
                 log.update({
                     'loss': metric_logger['loss'].median,
                 })
-                vis_logger.train_vis(writer, log, global_step, 'train')
+                vis_logger.train_vis(log, global_step, 'train')
                 end = time.perf_counter()
             
                 print(
@@ -115,7 +117,7 @@ def train(cfg):
                 print('Validating...')
                 start = time.perf_counter()
                 checkpoint = [model, optimizer_fg, optimizer_bg, epoch, global_step]
-                evaluator.train_eval(model, valset, valset.bb_path, writer, global_step, cfg.device, checkpoint, checkpointer)
+                evaluator.train_eval(model, valset, valset.bb_path, global_step, cfg.device, checkpoint, checkpointer)
                 print('Validation takes {:.4f}s.'.format(time.perf_counter() - start))
         
             start = time.perf_counter()

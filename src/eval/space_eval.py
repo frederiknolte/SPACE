@@ -10,7 +10,7 @@ from tqdm import tqdm
 import json
 from .eval_cfg import eval_cfg
 from .ap import read_boxes, convert_to_boxes, compute_ap, compute_counts
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 
 class SpaceEval():
@@ -37,7 +37,7 @@ class SpaceEval():
         
 
     @torch.no_grad()
-    def train_eval(self, model, valset, bb_path, writer, global_step, device, checkpoint, checkpointer):
+    def train_eval(self, model, valset, bb_path, global_step, device, checkpoint, checkpointer):
         """
         Evaluation during training. This includes:
             - mse evaluated on validation set
@@ -45,15 +45,15 @@ class SpaceEval():
         :return:
         """
         if 'mse' in eval_cfg.train.metrics:
-            self.train_eval_mse(model, valset, writer, global_step, device)
+            self.train_eval_mse(model, valset, global_step, device)
         if 'ap' in eval_cfg.train.metrics:
-            results = self.train_eval_ap_and_acc(model, valset, bb_path, writer, global_step, device)
+            results = self.train_eval_ap_and_acc(model, valset, bb_path, global_step, device)
             checkpointer.save_best('ap_dot5', results['APs'][0], checkpoint, min_is_better=False)
             checkpointer.save_best('ap_avg', np.mean(results['APs']), checkpoint, min_is_better=False)
             checkpointer.save_best('error_rate', results['error_rate'], checkpoint, min_is_better=True)
         
     @torch.no_grad()
-    def train_eval_ap_and_acc(self, model, valset, bb_path, writer: SummaryWriter, global_step, device):
+    def train_eval_ap_and_acc(self, model, valset, bb_path, global_step, device):
         """
         Evaluate ap and accuracy during training
         
@@ -72,18 +72,21 @@ class SpaceEval():
         error_rate = result_dict['error_rate']
         
         for ap, thres in zip(APs, iou_thresholds):
-            writer.add_scalar(f'val/ap_{thres}', ap, global_step)
-        writer.add_scalar(f'val/ap_avg', np.mean(APs), global_step)
-        writer.add_scalar('val/accuracy', accuracy, global_step)
-        writer.add_scalar('val/perfect', perfect, global_step)
-        writer.add_scalar('val/overcount', overcount, global_step)
-        writer.add_scalar('val/undercount', undercount, global_step)
-        writer.add_scalar('val/error_rate', error_rate, global_step)
-        
+            wandb.log({f'val/ap_{thres}': ap,
+                       'global_step': global_step}, commit=False)
+
+        wandb.log({f'val/ap_avg': np.mean(APs),
+                    'val/accuracy': accuracy,
+                    'val/perfect': perfect,
+                    'val/overcount': overcount,
+                    'val/undercount': undercount,
+                    'val/error_rate': error_rate,
+                    'global_step': global_step}, commit=True)
+
         return result_dict
 
     @torch.no_grad()
-    def train_eval_mse(self, model, valset, writer, global_step, device):
+    def train_eval_mse(self, model, valset, global_step, device):
         """
         Evaluate MSE during training
         """
@@ -114,8 +117,10 @@ class SpaceEval():
         # Add last log
         # log.update([(k, torch.tensor(v.global_avg)) for k, v in metric_logger.values.items()])
         mse = metric_logger['mse'].global_avg
-        writer.add_scalar(f'val/mse', mse, global_step=global_step)
-    
+
+        wandb.log({f'val/mse': mse,
+                   'global_step': global_step}, commit=True)
+
         model.train()
         
         return mse

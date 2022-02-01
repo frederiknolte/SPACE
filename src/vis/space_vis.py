@@ -1,4 +1,3 @@
-from torch.utils.tensorboard import SummaryWriter
 import imageio
 import numpy as np
 import torch
@@ -7,6 +6,7 @@ from .utils import bbox_in_one
 from attrdict import AttrDict
 from torchvision.utils import make_grid
 from torch.utils.data import Subset, DataLoader
+import wandb
 
 
 class SpaceVis:
@@ -15,7 +15,7 @@ class SpaceVis:
     
     
     @torch.no_grad()
-    def train_vis(self, writer: SummaryWriter, log, global_step, mode, num_batch=10):
+    def train_vis(self, log, global_step, mode, num_batch=10):
         """
         """
         B = num_batch
@@ -49,17 +49,18 @@ class SpaceVis:
         grid = grid.view(B*N, 3, H, W)
         
         grid_image = make_grid(grid, nrow, normalize=False, pad_value=1)
-        writer.add_image(f'{mode}/#0-separations', grid_image, global_step)
         
+        wandb.log({f'{mode}/#0-separations': wandb.Image(grid_image)}, commit=False)
+
         grid_image = make_grid(log.imgs, 5, normalize=False, pad_value=1)
-        writer.add_image(f'{mode}/1-image', grid_image, global_step)
-        
+        wandb.log({f'{mode}/1-image': wandb.Image(grid_image)}, commit=False)
+
         grid_image = make_grid(log.y, 5, normalize=False, pad_value=1)
-        writer.add_image(f'{mode}/2-reconstruction_overall', grid_image, global_step)
-        
+        wandb.log({f'{mode}/2-reconstruction_overall': wandb.Image(grid_image)}, commit=False)
+
         grid_image = make_grid(log.bg, 5, normalize=False, pad_value=1)
-        writer.add_image(f'{mode}/3-background', grid_image, global_step)
-        
+        wandb.log({f'{mode}/3-background': wandb.Image(grid_image)}, commit=False)
+
         mse = (log.y - log.imgs) ** 2
         mse = mse.flatten(start_dim=1).sum(dim=1).mean(dim=0)
         log_like, kl_z_what, kl_z_where, kl_z_pres, kl_z_depth, kl_bg = (
@@ -70,17 +71,18 @@ class SpaceVis:
         loss = log.loss.mean()
         
         count = log.z_pres.flatten(start_dim=1).sum(dim=1).mean(dim=0)
-        writer.add_scalar(f'{mode}/mse', mse.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/loss', loss, global_step=global_step)
-        writer.add_scalar(f'{mode}/count', count, global_step=global_step)
-        writer.add_scalar(f'{mode}/log_like', log_like.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/loss_boundary', loss_boundary.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/What_KL', kl_z_what.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/Where_KL', kl_z_where.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/Pres_KL', kl_z_pres.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/Depth_KL', kl_z_depth.item(), global_step=global_step)
-        writer.add_scalar(f'{mode}/Bg_KL', kl_bg.item(), global_step=global_step)
-    
+        wandb.log({f'{mode}/mse': mse.item(),
+                   f'{mode}/loss': loss,
+                   f'{mode}/count': count,
+                   f'{mode}/log_like': log_like.item(),
+                   f'{mode}/loss_boundary': loss_boundary.item(),
+                   f'{mode}/What_KL': kl_z_what.item(),
+                   f'{mode}/Where_KL': kl_z_where.item(),
+                   f'{mode}/Pres_KL': kl_z_pres.item(),
+                   f'{mode}/Depth_KL': kl_z_depth.item(),
+                   f'{mode}/Bg_KL': kl_bg.item(),
+                   'global_step': global_step}, commit=True)
+
     @torch.no_grad()
     def show_vis(self, model, dataset, indices, path, device):
         dataset = Subset(dataset, indices)
