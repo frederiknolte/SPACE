@@ -84,7 +84,7 @@ class SpaceFg(nn.Module):
                                     arch.tau_start_step, arch.tau_end_step,
                                     arch.tau_start_value, arch.tau_end_value)
     
-    def forward(self, x, globel_step):
+    def forward(self, x, globel_step, fast_forward=False):  # TODO implement fast forward
         """
         Forward pass
 
@@ -116,6 +116,20 @@ class SpaceFg(nn.Module):
         
         # (B*G*G, D)
         z_what, z_what_post = self.z_what_net(x_att)
+
+        if fast_forward:
+            z_what = z_what.view(B, arch.G ** 2, arch.z_what_dim)
+            log = {
+                'z_what': z_what,
+                'z_where': z_where,
+                'z_pres': z_pres,
+                'z_scale': z_scale,
+                'z_shift': z_shift,
+                'z_depth': z_depth,
+                'z_pres_prob': torch.sigmoid(z_pres_logits),
+                'prior_z_pres_prob': self.prior_z_pres_prob.unsqueeze(0),
+            }
+            return 0., 0., 0., 0., 0., log
         
         # Decode z_what into small reconstructed glimpses
         # All (B*G*G, 3, H, W)
@@ -247,6 +261,7 @@ class SpaceFg(nn.Module):
             'boundary_loss': boundary_loss,
             'boundary_map': boundary_map,
             'importance_map_full_res_norm': importance_map_full_res_norm,
+            'y_each_cell': y_each_cell,
             
             'kl_z_what': kl_z_what,
             'kl_z_pres': kl_z_pres,

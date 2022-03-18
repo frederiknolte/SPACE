@@ -15,7 +15,7 @@ class Space(nn.Module):
         self.fg_module = SpaceFg()
         self.bg_module = SpaceBg()
         
-    def forward(self, x, global_step):
+    def forward(self, x, global_step, fast_forward=False):
         """
         Inference.
         
@@ -28,10 +28,16 @@ class Space(nn.Module):
         
         # Background extraction
         # (B, 3, H, W), (B, 3, H, W), (B,)
-        bg_likelihood, bg, kl_bg, log_bg = self.bg_module(x, global_step)
+        if not fast_forward:
+            bg_likelihood, bg, kl_bg, log_bg = self.bg_module(x, global_step)
+        else:
+            bg_likelihood, bg, kl_bg, log_bg = 0., 0., 0., {}
         
         # Foreground extraction
-        fg_likelihood, fg, alpha_map, kl_fg, loss_boundary, log_fg = self.fg_module(x, global_step)
+        fg_likelihood, fg, alpha_map, kl_fg, loss_boundary, log_fg = self.fg_module(x, global_step, fast_forward)
+
+        if fast_forward:
+            return 0., log_fg
 
         # Fix alpha trick
         if global_step and global_step < arch.fix_alpha_steps:
