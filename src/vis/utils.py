@@ -1,6 +1,6 @@
 import torch
-import matplotlib
-matplotlib.use('agg')
+# import matplotlib
+# matplotlib.use('agg')
 from utils import spatial_transform
 
 

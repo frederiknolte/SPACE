@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, '..')
 import src.model.space.arch as arch
 import src.model.space.bg as bg
 import src.model.space.fg as fg
