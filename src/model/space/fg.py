@@ -84,7 +84,7 @@ class SpaceFg(nn.Module):
                                     arch.tau_start_step, arch.tau_end_step,
                                     arch.tau_start_value, arch.tau_end_value)
     
-    def forward(self, x, globel_step, fast_forward=False):  # TODO implement fast forward
+    def forward(self, x, globel_step, fast_forward=False, inference=False):  # TODO implement fast forward
         """
         Forward pass
 
@@ -104,7 +104,7 @@ class SpaceFg(nn.Module):
         
         # Everything is (B, G*G, D), where D varies
         z_pres, z_depth, z_scale, z_shift, z_where, \
-        z_pres_logits, z_depth_post, z_scale_post, z_shift_post = self.img_encoder(x, self.tau)
+        z_pres_logits, z_depth_post, z_scale_post, z_shift_post = self.img_encoder(x, self.tau, inference)
         
         # (B, 3, H, W) -> (B*G*G, 3, H, W). Note we must use repeat_interleave instead of repeat
         x_repeat = torch.repeat_interleave(x, arch.G ** 2, dim=0)
@@ -343,7 +343,7 @@ class ImgEncoderFg(nn.Module):
         # (2, G, G). I do this just to ensure that device is correct.
         self.register_buffer('offset', torch.stack((offset_x, offset_y), dim=0).float())
     
-    def forward(self, x, tau):
+    def forward(self, x, tau, inference=False):
         """
         Given image, infer z_pres, z_depth, z_where
 
@@ -414,8 +414,11 @@ class ImgEncoderFg(nn.Module):
         # (B, 2, G, G) -> (B, G*G, 2)
         z_shift_mean, z_shift_std = reshape(z_shift_mean, z_shift_std)
         z_shift_post = Normal(z_shift_mean, z_shift_std)
-        z_shift = z_shift_post.rsample()
-        
+        if inference:
+            z_shift = z_shift_mean
+        else:
+            z_shift = z_shift_post.rsample()
+
         # scale: unbounded to (0, 1), (B, G*G, 2)
         z_scale = z_scale.sigmoid()
         # offset: (2, G, G) -> (G*G, 2)
