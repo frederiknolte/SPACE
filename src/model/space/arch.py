@@ -60,6 +60,8 @@ arch = CfgNode({
     'K': 5,
     # Flag for using a weak background decoder. If False, the default decoder will be used for K>1 and a strong decoder for K==1.
     'use_weak_bg_decoder': False,
+    # Flag for using normal background decoder
+    'use_normal_bg_decoder': False,
     # Background likelihood sigma
     'bg_sigma': 0.15,
     # Image encoding dimension
@@ -75,4 +77,4 @@ arch = CfgNode({
     # Hidden layer dim for the network that computes q(z_c|z_m, x)
     'predict_comp_hidden_dim': 64,
     # ==== END ====
-})
+}, new_allowed=True)

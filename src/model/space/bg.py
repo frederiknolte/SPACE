@@ -30,7 +30,7 @@ class SpaceBg(nn.Module):
         # Component decoder
         if arch.use_weak_bg_decoder:
             self.comp_decoder = CompDecoderWeak()
-        elif arch.K > 1:
+        elif arch.K > 1 or arch.use_normal_bg_decoder:
             self.comp_decoder = CompDecoder()
         else:
             self.comp_decoder = CompDecoderStrong()
