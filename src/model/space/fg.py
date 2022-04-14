@@ -84,7 +84,7 @@ class SpaceFg(nn.Module):
                                     arch.tau_start_step, arch.tau_end_step,
                                     arch.tau_start_value, arch.tau_end_value)
     
-    def forward(self, x, globel_step, fast_forward=False, inference=False):  # TODO implement fast forward
+    def forward(self, x, globel_step, fast_forward=False, inference=False):
         """
         Forward pass
 
