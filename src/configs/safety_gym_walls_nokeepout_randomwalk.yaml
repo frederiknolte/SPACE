@@ -7,7 +7,7 @@ device_ids: [0, 1]
 device: 'cuda:0'
 checkpointdir: '../output/checkpoints'
 evaldir: '../output/eval/'
-exp_name: 'nokeepout_randomwalk_strongdecoder'
+exp_name: 'nokeepout_randomwalk_strongdecoder_multiple_4dim'
 
 wandb:
   logging: true
@@ -16,7 +16,7 @@ wandb:
 
 dataset: 'safety_gym'
 dataset_roots:
-  safety_gym: '../data/point_128x128_walls_nokeepout'
+  safety_gym: '../data/point_128x128_walls_nokeepout_randomwalk_multiple'
 
 
 # For engine.train
@@ -82,9 +82,9 @@ arch:
   fix_alpha_steps: 0
   fix_alpha_value: 0.1
 
-  K: 1
+  K: 2
   use_weak_bg_decoder: false
-  use_normal_bg_decoder: false
+  use_normal_bg_decoder: true
   bg_sigma: 0.10
 
   boundary_loss: true
