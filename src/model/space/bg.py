@@ -500,7 +500,7 @@ class CompDecoderStrong(nn.Module):
     def __init__(self):
         super(CompDecoderStrong, self).__init__()
         
-        self.dec = nn.Sequential(
+        self.decoder = nn.Sequential(
             nn.Conv2d(arch.z_comp_dim, 256, 1),
             nn.CELU(),
             nn.GroupNorm(16, 256),
@@ -551,7 +551,7 @@ class CompDecoderStrong(nn.Module):
         :return:
         """
         x = x.view(*x.size(), 1, 1)
-        comp = torch.sigmoid(self.dec(x))
+        comp = torch.sigmoid(self.decoder(x))
         return comp
 
 
