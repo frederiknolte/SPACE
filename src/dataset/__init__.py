@@ -18,6 +18,8 @@ def get_dataset(cfg, mode):
         return Obj3D(cfg.dataset_roots.OBJ3D_LARGE, mode)
     elif cfg.dataset == 'safety_gym':
         return SafetyGymDataset(cfg.dataset_roots.safety_gym, mode)
+    elif cfg.dataset == 'ai2thor':
+        return SafetyGymDataset(cfg.dataset_roots.ai2thor, mode)
 
 
 def get_dataloader(cfg, mode):
